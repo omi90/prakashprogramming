@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Ping Pong CSS</title>
+<style type="text/css">
+#paddle1{
+	position:absolute;
+	top:200px;
+	background-color:#0000FF;
+	border-radius:10px;
+}
+#paddle2{
+	position:absolute;
+	top:200px;
+	background-color:#003300;
+	border-radius:10px;
+}
+#ball{
+	position:absolute;
+	top:200px;
+	background-color:#FF3300;
+	border-radius:20px;
+}
+</style>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript">
+var isPlaying = false,isGameStart=true;
+var windowW = 1300,windowH = 800,windowWo = 1300,windowHo = 800;
+var paddle1,paddle2,ball;
+var gameInt;
+var Paddle = function(elmId){
+	this.elmId=elmId;
+	this.width=0;
+	this.height=0;
+	this.top=0;
+	this.left=0;
+	this.maxSpeed = 2;
+	this.score = 0;
+	this.isMovingDown = false;
+	this.isMovingUp = false;
+};
+Paddle.prototype.draw = function(){
+	if(this.isMovingDown && (this.top+this.height+10) < windowH){
+		this.top += this.maxSpeed;
+	}
+	if(this.isMovingUp && (this.top-10)>0){
+		this.top -= this.maxSpeed;
+	}
+	$("#"+this.elmId).css("width",this.width).css("height",this.height).css("top",this.top).css("left",this.left);
+};
+var Ball = function(elmId){
+	this.elmId=elmId;
+	this.width=0;
+	this.height=0;
+	this.top=0;
+	this.left=0;
+	this.xSpeed = 4;
+	this.ySpeed = 3;
+};
+Ball.prototype.draw = function(){
+	if((this.top+this.height+20) > windowH || this.top < 10){
+		this.ySpeed = -this.ySpeed;
+	}
+	if(this.left < 2 ){
+		paddle2.score +=10;
+		this.xSpeed = Math.abs(this.xSpeed);	
+	}
+	if(this.left + this.width >windowW-2){
+		paddle1.score +=10;
+		this.xSpeed = -Math.abs(this.xSpeed);
+	}
+	this.left += this.xSpeed;
+	this.top  += this.ySpeed;
+	$("#"+this.elmId).css("width",this.width).css("height",this.height).css("top",this.top).css("left",this.left);	
+};
+var requestAnimFrame =  window.requestAnimationFrame ||
+						window.webkitRequestAnimationFrame ||
+						window.mozRequestAnimationFrame ||
+						window.msRequestAnimationFrame ||
+						window.oRequestAnimationFrame ||
+						function(callback){
+							window.setTimeout(callback,1000/60);
+						};
+$(document).ready(function(e) {
+		paddle1 = new Paddle("paddle1");
+		paddle2 = new Paddle("paddle2");
+		ball = new Ball("ball");
+        init();
+		window.addEventListener('resize',init,false);
+		addKeyListeners();
+		loop();
+});
+function loop(){
+	if(isPlaying)
+		setAll();
+	requestAnimFrame(loop);	
+}
+function init(){
+		windowWo = windowW;
+		windowHo = windowH;
+		windowW = window.innerWidth;
+		windowH = window.innerHeight;
+		paddle1.width = windowW*1/100;
+		paddle1.height = windowH*15/100;
+		paddle2.width = windowW*1/100;
+		paddle2.height = windowH*15/100;
+		ball.height = ball.width = windowH*6/100;
+		if(isGameStart){
+			paddle1.top = paddle2.top = ball.top = (windowH/2)-(paddle1.height/2);
+			paddle1.left = 0;
+			paddle2.left = windowW - paddle2.width;
+	  		ball.top=(windowH/2)-(ball.height/2);
+			ball.left=(windowW/2)-(ball.width/2);
+			isGameStart = false;
+		}
+		else{
+			paddle1.top = paddle1.top*windowH/windowHo;
+			paddle2.top = paddle2.top*windowH/windowHo;
+			paddle1.left = 0;
+			paddle2.left = windowW - paddle2.width;
+			ball.top = ball.top*windowH/windowHo;
+			ball.left = ball.left*windowW/windowWo;
+			ball.xSpeed = ball.xSpeed*windowW/windowWo;
+			ball.ySpeed = ball.ySpeed*windowH/windowHo;
+	  	}
+		setAll();
+}
+function checkCollision(){
+	if(( ball.left + ball.width ) > paddle2.left || ball.left < (paddle1.left + paddle1.width)){
+		if((ball.top > paddle1.top && ball.top < paddle1.top + paddle1.height)||
+		   (ball.top + ball.height > paddle1.top && ball.top + ball.height < paddle1.top + paddle1.height)||
+		   (ball.top > paddle2.top && ball.top < paddle2.top + paddle2.height)||
+		   (ball.top + ball.height > paddle2.top && ball.top + ball.height < paddle2.top + paddle2.height))
+		ball.xSpeed = -ball.xSpeed;	
+	}
+	
+}
+function setAll(){
+		checkCollision();
+		ball.draw();
+		paddle1.draw();
+		paddle2.draw();
+		updateScore();
+}
+function updateScore(){
+		$("#score").html('<i>Score</i><br/>Player1 : '+paddle1.score+' &nbsp; Player2 : '+paddle2.score);
+}
+function addKeyListeners(){
+	$(document).bind('keydown',isKeyDown);			
+	$(document).bind('keyup',isKeyUp);			
+}
+function isKeyDown(e) {
+    var keyID = e.keyCode || e.which;
+    if (keyID === 38 ){//up arrow
+	    e.preventDefault();
+		paddle2.isMovingUp = true;
+	}
+	if( keyID === 87) {  //W key
+        e.preventDefault();
+        paddle1.isMovingUp = true;
+    }
+    if (keyID === 40){//down arrow
+	   e.preventDefault();
+	   paddle2.isMovingDown = true;
+    }
+	if(keyID === 83) { // S key
+        e.preventDefault();
+       paddle1.isMovingDown = true;
+    }
+}
+function isKeyUp(e) {
+    var keyID = e.keyCode || e.which;
+    if (keyID === 38 ){//up arrow
+	    e.preventDefault();
+		paddle2.isMovingUp = false;
+	}
+	if( keyID === 87) {  //W key
+        e.preventDefault();
+        paddle1.isMovingUp = false;
+    }
+    if (keyID === 40){//down arrow
+	   e.preventDefault();
+	   paddle2.isMovingDown = false;
+    }
+	if(keyID === 83) { // S key
+        e.preventDefault();
+       paddle1.isMovingDown = false;
+    }
+}
+function toggleGameState(){
+	isPlaying = !isPlaying;	
+	if(isPlaying)
+		$("#gameState").val("Pause");
+	else
+		$("#gameState").val("Play");	
+}
+</script>
+</head>
+<body>
+<center><label id="score"><i>Score</i><br/>Player1 : 0 &nbsp; Player2 : 0</label><input id="gameState" style="height:20px;" value="Play" type="button" onClick="toggleGameState()"/></center>
+<div id="paddle1">
+</div>
+<div id="ball">
+</div>
+<div id="paddle2">
+</div>
+</body>
+</html>

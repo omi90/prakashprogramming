@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Black & White Image</title>
+</head>
+<body>
+	<canvas id="canvas" width="500px" height="500px" style="border:1px solid blue">
+    	Browser not supported.
+    </canvas>
+    <input type="button" onClick="start()" value="Convert" />
+    <script type="text/javascript">
+		var canvas = document.getElementById('canvas');
+		var ctx = canvas.getContext('2d');
+		var image = new Image();
+		image.onload = drawImage;
+		image.src = "image.jpg";
+		function drawImage(){
+			ctx.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+		}
+		function start(){
+			var data = ctx.getImageData(0,0,canvas.width,canvas.height);
+			ctx.putImageData(convertToBG(data),0,0);
+		}
+		function convertToBG(data){
+			var nimg = ctx.createImageData(data);
+			var n=0;
+			while(n<data.width*data.height)
+			{
+				var idx = n * 4;
+				var r = data.data[idx];
+				var g = data.data[idx+1];
+				var b = data.data[idx+2];	
+				nimg.data[idx] = nimg.data[idx+1] = nimg.data[idx+2] = .299 * r + .587 * g + .114 * b;
+				nimg.data[idx+3] = 255;
+				n++;
+			}
+			return nimg;
+		}
+	</script>
+</body>
+</html>
